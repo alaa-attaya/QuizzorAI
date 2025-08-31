@@ -6,7 +6,7 @@ import { SafeAreaView } from "react-native";
 export default function Page() {
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
-      <Header title="MentorAI" />
+      <Header title="QuizzorAI" />
       <Dashboard />
     </SafeAreaView>
   );

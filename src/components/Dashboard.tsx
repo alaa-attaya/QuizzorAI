@@ -10,7 +10,7 @@ export function Dashboard() {
   return (
     <ScrollView className="flex-1 p-4 bg-gray-100">
       <Text className="text-2xl font-bold mb-6 text-center">
-        Welcome to MentorAI
+        Welcome to QuizzorAI
       </Text>
 
       <View className="space-y-4">
@@ -18,7 +18,6 @@ export function Dashboard() {
           <TouchableOpacity
             key={cta.title}
             className="bg-white rounded-lg p-4 shadow"
-            onPress={() => console.log(`${cta.title} clicked`)}
           >
             <Text className="text-lg font-semibold">{cta.title}</Text>
             <Text className="text-gray-500 text-sm mt-1">{cta.subtitle}</Text>

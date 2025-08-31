@@ -4,9 +4,10 @@ import { Tabs } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { ClerkProvider } from "@clerk/clerk-expo";
 import { Slot } from "expo-router";
-export default function MainLayout() {
+import { tokenCache } from "@clerk/clerk-expo/token-cache";
+export default function RootLayout() {
   return (
-    <ClerkProvider>
+    <ClerkProvider tokenCache={tokenCache}>
       <Slot />
     </ClerkProvider>
   );
