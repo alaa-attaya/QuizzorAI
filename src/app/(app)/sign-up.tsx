@@ -104,7 +104,7 @@ export default function SignUpPage() {
         className="flex-1 px-6"
       >
         {/* Header */}
-        <View className="items-center mt-20 mb-10">
+        <View className="items-center mt-10 mb-10">
           <SignHeader />
         </View>
 
@@ -147,7 +147,7 @@ export default function SignUpPage() {
           </View>
 
           {/* Confirm Password */}
-          <View className="mb-7">
+          <View className="mb-5">
             <Text className="text-gray-700 mb-2 font-medium">
               Confirm Password
             </Text>
@@ -163,25 +163,27 @@ export default function SignUpPage() {
               />
             </View>
           </View>
+
+          {/* Continue Button */}
+          <TouchableOpacity
+            onPress={onSignUpPress}
+            disabled={isLoading}
+            className={`py-4 rounded-xl ${
+              isLoading ? "bg-blue-400" : "bg-blue-600"
+            }`}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <View className="flex-row items-center justify-center">
+                <Feather name="arrow-right-circle" size={20} color="#fff" />
+                <Text className="text-white font-semibold text-lg ml-3">
+                  Continue
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
-
-        {/* Continue Button */}
-        <TouchableOpacity
-          onPress={onSignUpPress}
-          disabled={isLoading}
-          className={`py-4 rounded-xl ${
-            isLoading ? "bg-blue-400" : "bg-blue-600"
-          }`}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text className="text-white font-semibold text-center text-lg">
-              Continue
-            </Text>
-          )}
-        </TouchableOpacity>
-
         {/* Link to Sign In */}
         <View className="flex-row justify-center mt-8">
           <Text className="text-gray-600">Already have an account? </Text>

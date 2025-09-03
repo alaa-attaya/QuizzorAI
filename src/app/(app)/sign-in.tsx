@@ -54,7 +54,7 @@ export default function SignInPage() {
         className="flex-1 px-6"
       >
         {/* Header */}
-        <View className="items-center mt-20 mb-10">
+        <View className="items-center mt-10 mb-10">
           <SignHeader />
         </View>
 
@@ -81,7 +81,7 @@ export default function SignInPage() {
           </View>
 
           {/* Password */}
-          <View className="mb-0">
+          <View className="mb-5">
             <Text className="text-gray-700 mb-2 font-medium">Password</Text>
             <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-300">
               <Feather name="lock" size={20} color="#9CA3AF" className="ml-3" />
@@ -95,37 +95,39 @@ export default function SignInPage() {
               />
             </View>
           </View>
+
+          {/* Sign In Button */}
+          <TouchableOpacity
+            onPress={onSignInPress}
+            disabled={isLoading}
+            className={`py-4 rounded-xl ${
+              isLoading ? "bg-blue-400" : "bg-blue-600"
+            }`}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <View className="flex-row items-center justify-center">
+                <Feather name="log-in" size={20} color="#fff" />
+                <Text className="text-white font-semibold text-lg ml-3">
+                  Sign In
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* OR Separator */}
+          <View className="flex-row items-center my-5">
+            <View className="flex-1 h-px bg-gray-300" />
+            <Text className="px-3 text-gray-500 font-semibold">OR</Text>
+            <View className="flex-1 h-px bg-gray-300" />
+          </View>
+
+          {/* Google Sign-In */}
+          <View className="">
+            <GoogleSignIn />
+          </View>
         </View>
-
-        {/* Sign In Button */}
-        <TouchableOpacity
-          onPress={onSignInPress}
-          disabled={isLoading}
-          className={`py-4 rounded-xl ${
-            isLoading ? "bg-blue-400" : "bg-blue-600"
-          }`}
-        >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text className="text-white font-semibold text-center text-lg">
-              Sign In
-            </Text>
-          )}
-        </TouchableOpacity>
-
-        {/* OR Separator */}
-        <View className="flex-row items-center my-4">
-          <View className="flex-1 h-px bg-gray-300" />
-          <Text className="px-3 text-gray-500 font-semibold">OR</Text>
-          <View className="flex-1 h-px bg-gray-300" />
-        </View>
-
-        {/* Google Sign-In */}
-        <View className="mb-6">
-          <GoogleSignIn />
-        </View>
-
         {/* Link to Sign Up */}
         <View className="flex-row justify-center mt-2">
           <Text className="text-gray-600">Don't have an account? </Text>

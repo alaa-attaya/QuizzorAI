@@ -10,7 +10,7 @@ import * as WebBrowser from "expo-web-browser";
 import * as AuthSession from "expo-auth-session";
 import { useSSO } from "@clerk/clerk-expo";
 import { router } from "expo-router";
-
+import { Ionicons } from "@expo/vector-icons";
 // Handle any pending auth sessions
 WebBrowser.maybeCompleteAuthSession();
 
@@ -62,7 +62,7 @@ export default function GoogleSignIn() {
   }, [running, startSSOFlow]);
 
   return (
-    <View className="mb-5">
+    <View className="">
       <TouchableOpacity
         onPress={onPress}
         disabled={running}
@@ -71,9 +71,12 @@ export default function GoogleSignIn() {
         {running ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text className="text-white font-semibold text-center text-lg">
-            Sign in with Google
-          </Text>
+          <View className="flex-row items-center justify-center">
+            <Ionicons name="logo-google" size={20} color="#fff" />
+            <Text className="text-white font-semibold text-lg ml-3">
+              Continue with Google
+            </Text>
+          </View>
         )}
       </TouchableOpacity>
     </View>
