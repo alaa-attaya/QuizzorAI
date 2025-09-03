@@ -6,11 +6,14 @@ import {
   TouchableOpacity,
   View,
   Alert,
+  KeyboardAvoidingView,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useSignUp } from "@clerk/clerk-expo";
 import { Link, useRouter } from "expo-router";
 import { SignHeader } from "@/components/SignHeader";
+import { Feather } from "@expo/vector-icons";
 
 export default function SignUpPage() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -49,7 +52,6 @@ export default function SignUpPage() {
       const signUpAttempt = await signUp.attemptEmailAddressVerification({
         code,
       });
-
       if (signUpAttempt.status === "complete") {
         await setActive({ session: signUpAttempt.createdSessionId });
         router.replace("/");
@@ -74,7 +76,7 @@ export default function SignUpPage() {
           placeholder="Enter verification code"
           onChangeText={setCode}
           editable={!isLoading}
-          className="bg-white px-4 py-4 rounded-xl border border-gray-300 mb-6"
+          className="bg-gray-100 px-4 py-4 rounded-xl border border-gray-300 mb-6"
         />
         <TouchableOpacity
           onPress={onVerifyPress}
@@ -97,56 +99,73 @@ export default function SignUpPage() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
-      <View className="flex-1 px-6">
-        {/* Header + Title */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1 px-6"
+      >
+        {/* Header */}
         <View className="items-center mt-20 mb-10">
           <SignHeader />
         </View>
-        <View className="items-center mb-5">
-          <Text className="text-3xl font-bold text-gray-800 mt-8 text-center">
+
+        {/* Card for Inputs */}
+        <View className="bg-white rounded-2xl px-6 py-8 shadow-md mb-6">
+          <Text className="text-3xl font-bold text-gray-800 mb-6 text-center">
             Create Account
           </Text>
+
+          {/* Email */}
+          <View className="mb-5">
+            <Text className="text-gray-700 mb-2 font-medium">Email</Text>
+            <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-300">
+              <Feather name="mail" size={20} color="#9CA3AF" className="ml-3" />
+              <TextInput
+                autoCapitalize="none"
+                value={emailAddress}
+                placeholder="Enter email"
+                onChangeText={setEmailAddress}
+                editable={!isLoading}
+                className="flex-1 px-4 py-4"
+              />
+            </View>
+          </View>
+
+          {/* Password */}
+          <View className="mb-5">
+            <Text className="text-gray-700 mb-2 font-medium">Password</Text>
+            <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-300">
+              <Feather name="lock" size={20} color="#9CA3AF" className="ml-3" />
+              <TextInput
+                value={password}
+                placeholder="Enter password"
+                secureTextEntry
+                onChangeText={setPassword}
+                editable={!isLoading}
+                className="flex-1 px-4 py-4"
+              />
+            </View>
+          </View>
+
+          {/* Confirm Password */}
+          <View className="mb-7">
+            <Text className="text-gray-700 mb-2 font-medium">
+              Confirm Password
+            </Text>
+            <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-300">
+              <Feather name="lock" size={20} color="#9CA3AF" className="ml-3" />
+              <TextInput
+                value={confirmPassword}
+                placeholder="Re-enter password"
+                secureTextEntry
+                onChangeText={setConfirmPassword}
+                editable={!isLoading}
+                className="flex-1 px-4 py-4"
+              />
+            </View>
+          </View>
         </View>
 
-        {/* Email */}
-        <View className="mb-5">
-          <Text className="text-gray-700 mb-2 font-medium">Email</Text>
-          <TextInput
-            autoCapitalize="none"
-            value={emailAddress}
-            placeholder="Enter email"
-            onChangeText={setEmailAddress}
-            editable={!isLoading}
-            className="bg-white px-4 py-4 rounded-xl border border-gray-300"
-          />
-        </View>
-        {/* Password */}
-        <View className="mb-5">
-          <Text className="text-gray-700 mb-2 font-medium">Password</Text>
-          <TextInput
-            value={password}
-            placeholder="Enter password"
-            secureTextEntry
-            onChangeText={setPassword}
-            editable={!isLoading}
-            className="bg-white px-4 py-4 rounded-xl border border-gray-300"
-          />
-        </View>
-        {/* Confirm Password */}
-        <View className="mb-7">
-          <Text className="text-gray-700 mb-2 font-medium">
-            Confirm Password
-          </Text>
-          <TextInput
-            value={confirmPassword}
-            placeholder="Re-enter password"
-            secureTextEntry
-            onChangeText={setConfirmPassword}
-            editable={!isLoading}
-            className="bg-white px-4 py-4 rounded-xl border border-gray-300"
-          />
-        </View>
-        {/* Continue button */}
+        {/* Continue Button */}
         <TouchableOpacity
           onPress={onSignUpPress}
           disabled={isLoading}
@@ -162,16 +181,17 @@ export default function SignUpPage() {
             </Text>
           )}
         </TouchableOpacity>
-        {/* Link to sign-in */}
+
+        {/* Link to Sign In */}
         <View className="flex-row justify-center mt-8">
           <Text className="text-gray-600">Already have an account? </Text>
-          <Link href="/sign-in" asChild>
+          <Link href="/sign-in" replace asChild>
             <TouchableOpacity>
               <Text className="text-blue-600 font-semibold">Sign in</Text>
             </TouchableOpacity>
           </Link>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
