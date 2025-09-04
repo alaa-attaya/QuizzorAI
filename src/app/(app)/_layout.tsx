@@ -16,7 +16,10 @@ export default function AppLayout() {
   }
   return (
     <Stack>
-      <Stack.Protected guard={isSignedIn}>
+      <Stack.Protected
+        guard={isSignedIn}
+        key={isSignedIn ? "signed-in" : "signed-out"}
+      >
         <Stack.Screen
           name="(tabs)"
           options={{
@@ -24,7 +27,10 @@ export default function AppLayout() {
           }}
         />
       </Stack.Protected>
-      <Stack.Protected guard={!isSignedIn}>
+      <Stack.Protected
+        guard={!isSignedIn}
+        key={!isSignedIn ? "signed-out" : "signed-in"}
+      >
         <Stack.Screen name="sign-in" options={{ headerShown: false }} />
         <Stack.Screen name="sign-up" options={{ headerShown: false }} />
       </Stack.Protected>

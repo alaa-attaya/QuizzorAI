@@ -14,13 +14,15 @@
       }
     ]
   ],
-  "name": "quizzor-ai",
-  "slug": "quizzor-ai",
-
+  "name": "QuizzorAI",
+  "slug": "quizzorai",
   "icon": "./assets/images/quizzorai.png",
   "splash": {
     "image": "./assets/images/quizzorai.png",
     "resizeMode": "contain",
     "backgroundColor": "#ffffff"
+  },
+  "android": {
+    "package": "com.anonymous.quizzorai"
   }
 }

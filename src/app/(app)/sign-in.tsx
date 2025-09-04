@@ -1,5 +1,5 @@
 import { useSignIn } from "@clerk/clerk-expo";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
   Text,
@@ -7,15 +7,14 @@ import {
   SafeAreaView,
   TouchableOpacity,
   View,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import React from "react";
 import { SignHeader } from "@/components/SignHeader";
 import GoogleSignIn from "@/components/GoogleSignIn";
 import { Feather } from "@expo/vector-icons";
-
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 export default function SignInPage() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
@@ -26,11 +25,21 @@ export default function SignInPage() {
 
   const onSignInPress = async () => {
     if (!isLoaded) return;
+
+    // Validation
+    if (!emailAddress.trim() || !password.trim()) {
+      Alert.alert(
+        "Missing Information",
+        "Please enter both email and password."
+      );
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const signInAttempt = await signIn.create({
-        identifier: emailAddress,
+        identifier: emailAddress.trim(),
         password,
       });
 
@@ -39,9 +48,14 @@ export default function SignInPage() {
         router.replace("/");
       } else {
         console.error(JSON.stringify(signInAttempt, null, 2));
+        Alert.alert(
+          "Sign In Failed",
+          "Please check your credentials and try again."
+        );
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(JSON.stringify(err, null, 2));
+      Alert.alert("Error", err?.message || "Something went wrong. Try again.");
     } finally {
       setIsLoading(false);
     }
@@ -49,9 +63,11 @@ export default function SignInPage() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1 px-6"
+      <KeyboardAwareScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        enableOnAndroid
+        extraScrollHeight={20}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
         <View className="items-center mt-10 mb-10">
@@ -129,15 +145,13 @@ export default function SignInPage() {
           </View>
         </View>
         {/* Link to Sign Up */}
-        <View className="flex-row justify-center mt-2">
+        <View className="flex-row justify-center ">
           <Text className="text-gray-600">Don't have an account? </Text>
-          <Link href="/sign-up" asChild>
-            <TouchableOpacity>
-              <Text className="text-blue-600 font-semibold">Sign up</Text>
-            </TouchableOpacity>
-          </Link>
+          <TouchableOpacity onPress={() => router.replace("/sign-up")}>
+            <Text className="text-blue-600 font-semibold">Sign up</Text>
+          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 }

@@ -1,8 +1,21 @@
 import { Tabs } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import { TouchableOpacity } from "react-native";
+import React from "react";
+
+const TabButton = React.forwardRef((props: any, ref: any) => (
+  <TouchableOpacity {...props} ref={ref} activeOpacity={0.6} />
+));
 export default function TabsLayout() {
   return (
-    <Tabs>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: "#2563EB", // active icon/text color
+        tabBarInactiveTintColor: "#9CA3AF", // inactive icon/text color
+        tabBarButton: (props) => <TabButton {...props} />,
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
