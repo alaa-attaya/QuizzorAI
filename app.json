@@ -4,7 +4,7 @@
   "orientation": "default",
   "web": {
     "output": "static",
-    "favicon": "./assets/images/favicon.png"
+    "favicon": "./assets/images/favicon.ico"
   },
   "plugins": [
     [
