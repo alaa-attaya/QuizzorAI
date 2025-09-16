@@ -1,11 +1,12 @@
-import React, { createContext, useContext, useMemo } from "react";
-import type { ReactNode } from "react";
-import { createClerkSupabaseClient } from "@/lib/supabase";
+// src/providers/SupabaseProvider.tsx
+import React, { createContext, useContext, ReactNode } from "react";
+import { useClerkSupabaseClient } from "@/lib/supabase";
+import { useSession } from "@clerk/clerk-expo";
 
 type SupabaseContextValue = {
-  supabase: any | null;
-  userId?: string | null;
-  sessionId?: string | null;
+  supabase: ReturnType<typeof useClerkSupabaseClient> | null;
+  userId: string | null;
+  sessionId: string | null;
   isSignedIn: boolean;
 };
 
@@ -13,28 +14,16 @@ const SupabaseContext = createContext<SupabaseContextValue | undefined>(
   undefined
 );
 
-export const SupabaseProvider = ({
-  children,
-  isSignedIn,
-  getToken,
-  userId,
-  sessionId,
-}: {
-  children: ReactNode;
-  isSignedIn: boolean;
-  getToken: () => Promise<string | null>;
-  userId?: string | null;
-  sessionId?: string | null;
-}) => {
-  const supabase = useMemo(() => {
-    if (!isSignedIn) return null;
-    return createClerkSupabaseClient(getToken);
-  }, [getToken, isSignedIn]);
+export const SupabaseProvider = ({ children }: { children: ReactNode }) => {
+  const { session, isSignedIn, isLoaded } = useSession();
+  const supabase = useClerkSupabaseClient();
 
-  const value = useMemo(
-    () => ({ supabase, userId, sessionId, isSignedIn }),
-    [supabase, userId, sessionId, isSignedIn]
-  );
+  const value: SupabaseContextValue = {
+    supabase: !isLoaded || !isSignedIn || !session ? null : supabase,
+    userId: session?.user.id ?? null,
+    sessionId: session?.id ?? null,
+    isSignedIn: !!isSignedIn,
+  };
 
   return (
     <SupabaseContext.Provider value={value}>

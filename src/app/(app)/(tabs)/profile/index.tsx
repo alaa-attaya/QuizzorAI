@@ -12,7 +12,7 @@ import { LogOut, KeyRound, ChevronRight } from "lucide-react-native";
 import { useRouter } from "expo-router";
 
 export default function ProfilePage() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const { signOut } = useAuth();
   const router = useRouter();
 
@@ -34,6 +34,15 @@ export default function ProfilePage() {
     ]);
   };
 
+  if (!isLoaded) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-100 items-center justify-center">
+        <Text className="text-gray-600">Loading...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // initials for avatar
   const initials =
     user?.fullName
       ?.split(" ")

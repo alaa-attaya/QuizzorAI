@@ -2,7 +2,6 @@ import React from "react";
 import { TouchableOpacity } from "react-native";
 import { Tabs } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import { useAuth } from "@clerk/clerk-expo";
 import { SupabaseProvider } from "@/providers/SupabaseProvider";
 
 const TabButton = React.forwardRef((props: any, ref: any) => (
@@ -10,15 +9,8 @@ const TabButton = React.forwardRef((props: any, ref: any) => (
 ));
 
 export default function TabsLayout() {
-  const { isSignedIn, getToken, userId, sessionId } = useAuth();
-
   return (
-    <SupabaseProvider
-      isSignedIn={isSignedIn}
-      getToken={getToken}
-      userId={userId}
-      sessionId={sessionId}
-    >
+    <SupabaseProvider>
       <Tabs
         screenOptions={{
           headerShown: false,

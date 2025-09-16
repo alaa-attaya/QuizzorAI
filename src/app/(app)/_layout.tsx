@@ -1,10 +1,12 @@
+// app/_layout.tsx
 import React from "react";
 import { Stack } from "expo-router";
-import { SignedIn, useAuth } from "@clerk/clerk-expo";
-import { ActivityIndicator, SafeAreaView, View, Text } from "react-native";
+import { useAuth } from "@clerk/clerk-expo";
+import { ActivityIndicator, SafeAreaView, View } from "react-native";
 
 export default function AppLayout() {
-  const { isLoaded, isSignedIn, userId, sessionId, getToken } = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
+
   if (!isLoaded) {
     return (
       <SafeAreaView className="flex-1 bg-gray-100">
@@ -14,26 +16,32 @@ export default function AppLayout() {
       </SafeAreaView>
     );
   }
+
   return (
     <Stack>
-      <Stack.Protected
-        guard={isSignedIn}
-        key={isSignedIn ? "signed-in" : "signed-out"}
-      >
-        <Stack.Screen
-          name="(tabs)"
-          options={{
-            headerShown: false,
-          }}
-        />
-      </Stack.Protected>
-      <Stack.Protected
-        guard={!isSignedIn}
-        key={!isSignedIn ? "signed-out" : "signed-in"}
-      >
-        <Stack.Screen name="sign-in" options={{ headerShown: false }} />
-        <Stack.Screen name="sign-up" options={{ headerShown: false }} />
-      </Stack.Protected>
+      {/* Signed in flow */}
+      <Stack.Screen
+        name="(tabs)"
+        options={{ headerShown: false }}
+        redirect={!isSignedIn}
+      />
+
+      {/* Signed out flow */}
+      <Stack.Screen
+        name="sign-in"
+        options={{ headerShown: false }}
+        redirect={isSignedIn}
+      />
+      <Stack.Screen
+        name="sign-up"
+        options={{ headerShown: false }}
+        redirect={isSignedIn}
+      />
+      <Stack.Screen
+        name="forgot-password"
+        options={{ headerShown: false }}
+        redirect={isSignedIn}
+      />
     </Stack>
   );
 }

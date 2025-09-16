@@ -28,7 +28,6 @@ export default function SignInPage() {
   const onSignInPress = async () => {
     if (!isLoaded) return;
 
-    // Validation
     if (!emailAddress.trim() || !password.trim()) {
       Alert.alert(
         "Missing Information",
@@ -71,18 +70,15 @@ export default function SignInPage() {
         extraScrollHeight={20}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
         <View className="items-center mt-10 mb-10">
           <SignHeader />
         </View>
 
-        {/* Card for Welcome & Inputs */}
         <View className="bg-white rounded-2xl px-6 py-8 shadow-md mb-6">
           <Text className="text-3xl font-bold text-gray-800 mb-6 text-center">
             Welcome Back
           </Text>
 
-          {/* Email */}
           <View className="mb-5">
             <Text className="text-gray-700 mb-2 font-medium">Email</Text>
             <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-300">
@@ -98,15 +94,14 @@ export default function SignInPage() {
             </View>
           </View>
 
-          {/* Password with Eye Toggle */}
-          <View className="mb-5">
+          <View className="mb-2">
             <Text className="text-gray-700 mb-2 font-medium">Password</Text>
             <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-300">
               <Feather name="lock" size={20} color="#9CA3AF" className="ml-3" />
               <TextInput
                 value={password}
                 placeholder="Enter password"
-                secureTextEntry={!showPassword} // <-- toggle here
+                secureTextEntry={!showPassword}
                 onChangeText={setPassword}
                 editable={!isLoading}
                 className="flex-1 px-4 py-4"
@@ -124,7 +119,13 @@ export default function SignInPage() {
             </View>
           </View>
 
-          {/* Sign In Button */}
+          {/* Forgot password link */}
+          <TouchableOpacity onPress={() => router.push("/forgot-password")}>
+            <Text className="text-blue-600 font-semibold text-right mb-5">
+              Forgot password?
+            </Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             onPress={onSignInPress}
             disabled={isLoading}
@@ -144,18 +145,15 @@ export default function SignInPage() {
             )}
           </TouchableOpacity>
 
-          {/* OR Separator */}
           <View className="flex-row items-center my-5">
             <View className="flex-1 h-px bg-gray-300" />
             <Text className="px-3 text-gray-500 font-semibold">OR</Text>
             <View className="flex-1 h-px bg-gray-300" />
           </View>
 
-          {/* Google Sign-In */}
           <GoogleSignIn />
         </View>
 
-        {/* Link to Sign Up */}
         <View className="flex-row justify-center ">
           <Text className="text-gray-600">Don't have an account? </Text>
           <TouchableOpacity onPress={() => router.replace("/sign-up")}>

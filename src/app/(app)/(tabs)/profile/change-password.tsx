@@ -1,3 +1,4 @@
+// app/change-password.tsx
 import React, { useState } from "react";
 import {
   SafeAreaView,
@@ -15,7 +16,7 @@ import { useUser } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 
 export default function ChangePasswordPage() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const router = useRouter();
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -26,6 +27,17 @@ export default function ChangePasswordPage() {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  if (!isLoaded) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-100 items-center justify-center">
+        <Text className="text-gray-600">Loading...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const hasPasswordLogin = user?.passwordEnabled === true;
+  const isOAuthOnly = !hasPasswordLogin;
 
   const handleSave = async () => {
     if (!newPassword || !confirmPassword) {
@@ -44,16 +56,28 @@ export default function ChangePasswordPage() {
       return;
     }
 
+    if (hasPasswordLogin && !currentPassword) {
+      Alert.alert(
+        "Missing Current Password",
+        "Please enter your current password."
+      );
+      return;
+    }
+
     setIsLoading(true);
     try {
       await user?.updatePassword({
-        currentPassword,
+        ...(hasPasswordLogin ? { currentPassword } : {}),
         newPassword,
       });
 
-      Alert.alert("Success", "Password updated successfully.", [
-        { text: "OK", onPress: () => router.back() },
-      ]);
+      Alert.alert(
+        "Success",
+        isOAuthOnly
+          ? "Password created successfully!"
+          : "Password updated successfully.",
+        [{ text: "OK", onPress: () => router.back() }]
+      );
     } catch (err: any) {
       console.error("Error updating password:", err);
       Alert.alert(
@@ -100,7 +124,7 @@ export default function ChangePasswordPage() {
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
       <Header
-        title="Change Password"
+        title={isOAuthOnly ? "Set Password" : "Change Password"}
         leftButton={{ onPress: () => router.back() }}
       />
 
@@ -112,17 +136,20 @@ export default function ChangePasswordPage() {
       >
         <View className="bg-white rounded-2xl px-6 py-8 shadow-md m-4">
           <Text className="text-2xl font-bold text-gray-800 mb-6 text-center">
-            Update Your Password
+            {isOAuthOnly
+              ? "Create a Password for Your Account"
+              : "Update Your Password"}
           </Text>
 
-          {renderPasswordInput(
-            "Current Password",
-            currentPassword,
-            setCurrentPassword,
-            showCurrent,
-            setShowCurrent,
-            "Enter current password"
-          )}
+          {hasPasswordLogin &&
+            renderPasswordInput(
+              "Current Password",
+              currentPassword,
+              setCurrentPassword,
+              showCurrent,
+              setShowCurrent,
+              "Enter current password"
+            )}
 
           {renderPasswordInput(
             "New Password",
@@ -155,7 +182,7 @@ export default function ChangePasswordPage() {
               <View className="flex-row items-center justify-center">
                 <Feather name="check" size={20} color="#fff" />
                 <Text className="text-white font-semibold text-lg ml-3">
-                  Save Password
+                  {isOAuthOnly ? "Set Password" : "Save Password"}
                 </Text>
               </View>
             )}

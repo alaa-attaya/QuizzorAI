@@ -299,7 +299,7 @@ enabled = false
 [auth.third_party.clerk]
 enabled = false
 # Obtain from https://clerk.com/setup/supabase
-# domain = "example.clerk.accounts.dev"
+# domain = "https://bold-tuna-7.clerk.accounts.dev"
 
 [edge_runtime]
 enabled = true

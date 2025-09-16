@@ -1,105 +1,36 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 
-import { useSupabase } from "@/providers/SupabaseProvider";
 import { useDashboardCache } from "@/lib/hooks/useDashboardCache";
 import Toast from "react-native-toast-message";
+
 export function Dashboard() {
   const router = useRouter();
-  const { supabase } = useSupabase(); // get client from provider
-
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const { stats, recent, saveCache } = useDashboardCache(
+  const { stats, recent } = useDashboardCache(
     "dashboard_stats",
     "dashboard_recent"
   );
-
-  // Fetch dashboard data
-  const fetchDashboardData = useCallback(async () => {
-    if (!supabase) return;
-
-    try {
-      const [subjectsResp, topicsResp, quizzesResp, scoresResp, recentResp] =
-        await Promise.all([
-          supabase.from("subjects").select("id", { count: "exact" }),
-          supabase.from("topics").select("id", { count: "exact" }),
-          supabase.from("quizzes").select("id", { count: "exact" }),
-          supabase.from("user_quizzes").select("score"),
-          supabase
-            .from("user_quizzes")
-            .select(`id, score, completed_at, quizzes(title)`)
-            .order("completed_at", { ascending: false })
-            .limit(4),
-        ]);
-
-      // Average score calculation
-      const avgScore = scoresResp.data?.length
-        ? Math.round(
-            scoresResp.data.reduce(
-              (a: number, q: any) => a + (q.score ?? 0),
-              0
-            ) / scoresResp.data.length
-          )
-        : 0;
-
-      const freshStats = {
-        subjects: subjectsResp.count || 0,
-        topics: topicsResp.count || 0,
-        quizzes: quizzesResp.count || 0,
-        averageScore: avgScore,
-      };
-
-      const freshRecent = recentResp.data || [];
-
-      // Save stats & recent quizzes in cache
-      await saveCache(freshStats, freshRecent);
-    } catch (err) {
-      console.error("Failed to fetch dashboard data:", err);
-    }
-  }, [supabase, saveCache]);
-
-  // Initial load
-  useEffect(() => {
-    const init = async () => {
-      setLoading(true);
-      await fetchDashboardData();
-      setLoading(false);
-    };
-    init();
-  }, [fetchDashboardData]);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Pull-to-refresh
-  const onRefresh = useCallback(async () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    await fetchDashboardData();
-    setRefreshing(false);
     Toast.show({
       type: "success",
       text1: "Dashboard updated",
       position: "top",
-      visibilityTime: 1500,
+      visibilityTime: 1000,
     });
-  }, [fetchDashboardData]);
-
-  if (loading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-gray-100">
-        <ActivityIndicator size="large" color="#2563EB" />
-        <Text className="mt-2 text-gray-500">Loading dashboard...</Text>
-      </View>
-    );
-  }
+    setRefreshing(false);
+  };
 
   return (
     <ScrollView
