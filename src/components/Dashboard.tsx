@@ -12,7 +12,7 @@ import { Feather } from "@expo/vector-icons";
 
 import { useSupabase } from "@/providers/SupabaseProvider";
 import { useDashboardCache } from "@/lib/hooks/useDashboardCache";
-
+import Toast from "react-native-toast-message";
 export function Dashboard() {
   const router = useRouter();
   const { supabase } = useSupabase(); // get client from provider
@@ -84,6 +84,12 @@ export function Dashboard() {
     setRefreshing(true);
     await fetchDashboardData();
     setRefreshing(false);
+    Toast.show({
+      type: "success",
+      text1: "Dashboard updated",
+      position: "top",
+      visibilityTime: 1500,
+    });
   }, [fetchDashboardData]);
 
   if (loading) {

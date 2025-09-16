@@ -23,6 +23,10 @@ export default function ChangePasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const handleSave = async () => {
     if (!newPassword || !confirmPassword) {
       Alert.alert("Missing Information", "Please fill in all fields.");
@@ -48,7 +52,7 @@ export default function ChangePasswordPage() {
       });
 
       Alert.alert("Success", "Password updated successfully.", [
-        { text: "OK", onPress: () => router.replace("/profile") },
+        { text: "OK", onPress: () => router.back() },
       ]);
     } catch (err: any) {
       console.error("Error updating password:", err);
@@ -61,9 +65,45 @@ export default function ChangePasswordPage() {
     }
   };
 
+  const renderPasswordInput = (
+    label: string,
+    value: string,
+    setValue: (val: string) => void,
+    show: boolean,
+    setShow: (val: boolean) => void,
+    placeholder: string
+  ) => (
+    <View className="mb-5">
+      <Text className="text-gray-700 mb-2 font-medium">{label}</Text>
+      <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-300">
+        <Feather
+          name="lock"
+          size={20}
+          color="#9CA3AF"
+          style={{ marginLeft: 12 }}
+        />
+        <TextInput
+          value={value}
+          placeholder={placeholder}
+          secureTextEntry={!show}
+          onChangeText={setValue}
+          editable={!isLoading}
+          className="flex-1 px-4 py-4"
+        />
+        <TouchableOpacity onPress={() => setShow(!show)} className="px-3">
+          <Feather name={show ? "eye" : "eye-off"} size={20} color="#9CA3AF" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-gray-100">
-      <Header title="Change Password" />
+      <Header
+        title="Change Password"
+        leftButton={{ onPress: () => router.back() }}
+      />
+
       <KeyboardAwareScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         enableOnAndroid
@@ -75,74 +115,33 @@ export default function ChangePasswordPage() {
             Update Your Password
           </Text>
 
-          {/* Current Password */}
-          <View className="mb-5">
-            <Text className="text-gray-700 mb-2 font-medium">
-              Current Password
-            </Text>
-            <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-300">
-              <Feather
-                name="lock"
-                size={20}
-                color="#9CA3AF"
-                style={{ marginLeft: 12 }}
-              />
-              <TextInput
-                value={currentPassword}
-                placeholder="Enter current password"
-                secureTextEntry
-                onChangeText={setCurrentPassword}
-                editable={!isLoading}
-                className="flex-1 px-4 py-4"
-              />
-            </View>
-          </View>
+          {renderPasswordInput(
+            "Current Password",
+            currentPassword,
+            setCurrentPassword,
+            showCurrent,
+            setShowCurrent,
+            "Enter current password"
+          )}
 
-          {/* New Password */}
-          <View className="mb-5">
-            <Text className="text-gray-700 mb-2 font-medium">New Password</Text>
-            <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-300">
-              <Feather
-                name="lock"
-                size={20}
-                color="#9CA3AF"
-                style={{ marginLeft: 12 }}
-              />
-              <TextInput
-                value={newPassword}
-                placeholder="Enter new password"
-                secureTextEntry
-                onChangeText={setNewPassword}
-                editable={!isLoading}
-                className="flex-1 px-4 py-4"
-              />
-            </View>
-          </View>
+          {renderPasswordInput(
+            "New Password",
+            newPassword,
+            setNewPassword,
+            showNew,
+            setShowNew,
+            "Enter new password"
+          )}
 
-          {/* Confirm Password */}
-          <View className="mb-5">
-            <Text className="text-gray-700 mb-2 font-medium">
-              Confirm Password
-            </Text>
-            <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-300">
-              <Feather
-                name="lock"
-                size={20}
-                color="#9CA3AF"
-                style={{ marginLeft: 12 }}
-              />
-              <TextInput
-                value={confirmPassword}
-                placeholder="Re-enter new password"
-                secureTextEntry
-                onChangeText={setConfirmPassword}
-                editable={!isLoading}
-                className="flex-1 px-4 py-4"
-              />
-            </View>
-          </View>
+          {renderPasswordInput(
+            "Confirm Password",
+            confirmPassword,
+            setConfirmPassword,
+            showConfirm,
+            setShowConfirm,
+            "Re-enter new password"
+          )}
 
-          {/* Save Button */}
           <TouchableOpacity
             onPress={handleSave}
             disabled={isLoading}

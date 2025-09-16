@@ -15,6 +15,7 @@ import { SignHeader } from "@/components/SignHeader";
 import GoogleSignIn from "@/components/GoogleSignIn";
 import { Feather } from "@expo/vector-icons";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+
 export default function SignInPage() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSignInPress = async () => {
     if (!isLoaded) return;
@@ -96,7 +98,7 @@ export default function SignInPage() {
             </View>
           </View>
 
-          {/* Password */}
+          {/* Password with Eye Toggle */}
           <View className="mb-5">
             <Text className="text-gray-700 mb-2 font-medium">Password</Text>
             <View className="flex-row items-center bg-gray-100 rounded-xl border border-gray-300">
@@ -104,11 +106,21 @@ export default function SignInPage() {
               <TextInput
                 value={password}
                 placeholder="Enter password"
-                secureTextEntry
+                secureTextEntry={!showPassword} // <-- toggle here
                 onChangeText={setPassword}
                 editable={!isLoading}
                 className="flex-1 px-4 py-4"
               />
+              <TouchableOpacity
+                onPress={() => setShowPassword((prev) => !prev)}
+                className="px-3"
+              >
+                <Feather
+                  name={showPassword ? "eye" : "eye-off"}
+                  size={20}
+                  color="#9CA3AF"
+                />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -140,10 +152,9 @@ export default function SignInPage() {
           </View>
 
           {/* Google Sign-In */}
-          <View className="">
-            <GoogleSignIn />
-          </View>
+          <GoogleSignIn />
         </View>
+
         {/* Link to Sign Up */}
         <View className="flex-row justify-center ">
           <Text className="text-gray-600">Don't have an account? </Text>

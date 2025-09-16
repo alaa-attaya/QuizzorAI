@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   SafeAreaView,
   Text,
@@ -13,20 +13,25 @@ import { useSignUp } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import { SignHeader } from "@/components/SignHeader";
 import { Feather } from "@expo/vector-icons";
-import { useEffect } from "react";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+
 export default function SignUpPage() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
+
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // <-- eye toggle
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // <-- eye toggle
+
   const [pendingVerification, setPendingVerification] = useState(false);
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  // Go Back
+
+  // Go Back during verification
   useEffect(() => {
-    if (!pendingVerification) return; // only active during verification
+    if (!pendingVerification) return;
 
     const backHandler = BackHandler.addEventListener(
       "hardwareBackPress",
@@ -39,41 +44,36 @@ export default function SignUpPage() {
             { text: "Yes", onPress: () => setPendingVerification(false) },
           ]
         );
-        return true; // prevent default behavior (app exit)
+        return true; // prevent default
       }
     );
 
-    return () => backHandler.remove(); // cleanup when pendingVerification changes or unmounts
+    return () => backHandler.remove();
   }, [pendingVerification]);
 
   const onSignUpPress = async () => {
     if (!isLoaded) return;
 
-    // Trim inputs
     const email = emailAddress.trim();
     const pass = password.trim();
     const confirmPass = confirmPassword.trim();
 
-    // Check for empty fields
     if (!email || !pass || !confirmPass) {
       Alert.alert("Missing Information", "Please fill in all fields.");
       return;
     }
 
-    // Basic email format check
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Alert.alert("Invalid Email", "Please enter a valid email address.");
       return;
     }
 
-    // Password match
     if (pass !== confirmPass) {
       Alert.alert("Passwords do not match", "Please re-enter your password.");
       return;
     }
 
-    // Optional: minimum password length
     if (pass.length < 6) {
       Alert.alert("Weak Password", "Password must be at least 6 characters.");
       return;
@@ -123,7 +123,6 @@ export default function SignUpPage() {
           extraScrollHeight={20}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header */}
           <View className="items-center mt-10 mb-10">
             <SignHeader />
           </View>
@@ -170,7 +169,6 @@ export default function SignUpPage() {
                 </View>
               )}
             </TouchableOpacity>
-            {/* Resend Code Text */}
             <View className="mt-4 flex-row justify-center">
               <Text className="text-gray-600">Didn't receive the code? </Text>
               <TouchableOpacity
@@ -194,9 +192,7 @@ export default function SignUpPage() {
                 }}
                 disabled={isLoading}
               >
-                <Text className={`text-blue-600 font-semibold ml-1`}>
-                  Resend
-                </Text>
+                <Text className="text-blue-600 font-semibold ml-1">Resend</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -213,12 +209,10 @@ export default function SignUpPage() {
         extraScrollHeight={20}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
         <View className="items-center mt-10 mb-10">
           <SignHeader />
         </View>
 
-        {/* Card for Inputs */}
         <View className="bg-white rounded-2xl px-6 py-8 shadow-md mb-6">
           <Text className="text-3xl font-bold text-gray-800 mb-6 text-center">
             Create Account
@@ -248,11 +242,21 @@ export default function SignUpPage() {
               <TextInput
                 value={password}
                 placeholder="Enter password"
-                secureTextEntry
+                secureTextEntry={!showPassword}
                 onChangeText={setPassword}
                 editable={!isLoading}
                 className="flex-1 px-4 py-4"
               />
+              <TouchableOpacity
+                onPress={() => setShowPassword((prev) => !prev)}
+                className="px-3"
+              >
+                <Feather
+                  name={showPassword ? "eye" : "eye-off"}
+                  size={20}
+                  color="#9CA3AF"
+                />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -266,11 +270,21 @@ export default function SignUpPage() {
               <TextInput
                 value={confirmPassword}
                 placeholder="Re-enter password"
-                secureTextEntry
+                secureTextEntry={!showConfirmPassword}
                 onChangeText={setConfirmPassword}
                 editable={!isLoading}
                 className="flex-1 px-4 py-4"
               />
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword((prev) => !prev)}
+                className="px-3"
+              >
+                <Feather
+                  name={showConfirmPassword ? "eye" : "eye-off"}
+                  size={20}
+                  color="#9CA3AF"
+                />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -297,10 +311,10 @@ export default function SignUpPage() {
             By signing up, you agree to our Terms of Service and Privacy Policy.
           </Text>
         </View>
-        {/* Link to Sign In */}
-        <View className="flex-row justify-center ">
-          <Text className="text-gray-600">Already have an account? </Text>
 
+        {/* Link to Sign In */}
+        <View className="flex-row justify-center">
+          <Text className="text-gray-600">Already have an account? </Text>
           <TouchableOpacity onPress={() => router.replace("/sign-in")}>
             <Text className="text-blue-600 font-semibold">Sign in</Text>
           </TouchableOpacity>
