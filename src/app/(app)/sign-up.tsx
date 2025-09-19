@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import {
-  SafeAreaView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -14,7 +13,7 @@ import { useRouter } from "expo-router";
 import { SignHeader } from "@/components/SignHeader";
 import { Feather } from "@expo/vector-icons";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 export default function SignUpPage() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();

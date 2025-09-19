@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  SafeAreaView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -16,6 +15,7 @@ import { Header } from "@/components/Header";
 import { useSupabase } from "@/providers/SupabaseProvider";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Toast from "react-native-toast-message";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function CreateSubjectPage() {
   const router = useRouter();
@@ -81,7 +81,10 @@ export default function CreateSubjectPage() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <SafeAreaView className="flex-1 bg-gray-100">
+      <SafeAreaView
+        edges={["bottom", "left", "right"]}
+        className="flex-1 bg-gray-100"
+      >
         <Header
           title="Create Subject"
           leftButton={{ onPress: () => router.back() }}

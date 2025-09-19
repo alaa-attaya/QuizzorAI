@@ -1,11 +1,6 @@
 import React from "react";
-import {
-  SafeAreaView,
-  Text,
-  View,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
+import { Text, View, TouchableOpacity, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "@/components/Header";
 import { useUser, useAuth } from "@clerk/clerk-expo";
 import { LogOut, KeyRound, ChevronRight } from "lucide-react-native";
@@ -42,7 +37,6 @@ export default function ProfilePage() {
     );
   }
 
-  // initials for avatar
   const initials =
     user?.fullName
       ?.split(" ")
@@ -52,7 +46,10 @@ export default function ProfilePage() {
     user?.primaryEmailAddress?.emailAddress[0].toUpperCase();
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
+    <SafeAreaView
+      edges={["bottom", "left", "right"]}
+      className="flex-1 bg-gray-100"
+    >
       <Header title="Profile" />
 
       {/* Profile Card */}

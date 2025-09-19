@@ -1,7 +1,5 @@
-// app/change-password.tsx
 import React, { useState } from "react";
 import {
-  SafeAreaView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -9,6 +7,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "@/components/Header";
 import { Feather } from "@expo/vector-icons";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
@@ -55,7 +54,6 @@ export default function ChangePasswordPage() {
       Alert.alert("Weak Password", "Password must be at least 6 characters.");
       return;
     }
-
     if (hasPasswordLogin && !currentPassword) {
       Alert.alert(
         "Missing Current Password",
@@ -122,7 +120,10 @@ export default function ChangePasswordPage() {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
+    <SafeAreaView
+      edges={["bottom", "left", "right"]}
+      className="flex-1 bg-gray-100"
+    >
       <Header
         title={isOAuthOnly ? "Set Password" : "Change Password"}
         leftButton={{ onPress: () => router.back() }}

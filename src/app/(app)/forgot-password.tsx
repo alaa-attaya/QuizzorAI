@@ -5,7 +5,6 @@ import { useRouter } from "expo-router";
 import {
   Text,
   TextInput,
-  SafeAreaView,
   TouchableOpacity,
   View,
   ActivityIndicator,
@@ -15,7 +14,7 @@ import { Feather } from "@expo/vector-icons";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { Header } from "@/components/Header";
 import { SignHeader } from "@/components/SignHeader";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 export default function ForgotPasswordPage() {
   const { signIn, isLoaded, setActive } = useSignIn();
   const router = useRouter();
@@ -92,7 +91,10 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-100">
+    <SafeAreaView
+      className="flex-1 bg-gray-100"
+      edges={["bottom", "left", "right"]}
+    >
       <Header
         title="Forgot Password"
         leftButton={{ onPress: () => router.replace("/sign-in") }}

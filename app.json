@@ -12,7 +12,9 @@
       {
         "origin": "https://n"
       }
-    ]
+    ],
+    "expo-web-browser",
+    "expo-font"
   ],
   "name": "QuizzorAI",
   "slug": "quizzorai",

@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   Text,
   TextInput,
-  SafeAreaView,
   TouchableOpacity,
   View,
   ActivityIndicator,
@@ -15,7 +14,7 @@ import { SignHeader } from "@/components/SignHeader";
 import GoogleSignIn from "@/components/GoogleSignIn";
 import { Feather } from "@expo/vector-icons";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-
+import { SafeAreaView } from "react-native-safe-area-context";
 export default function SignInPage() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();

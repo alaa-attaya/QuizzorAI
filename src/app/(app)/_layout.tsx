@@ -2,8 +2,8 @@
 import React from "react";
 import { Stack } from "expo-router";
 import { useAuth } from "@clerk/clerk-expo";
-import { ActivityIndicator, SafeAreaView, View } from "react-native";
-
+import { ActivityIndicator, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 export default function AppLayout() {
   const { isLoaded, isSignedIn } = useAuth();
 
