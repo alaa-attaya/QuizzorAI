@@ -8,6 +8,7 @@ type SupabaseContextValue = {
   userId: string | null;
   sessionId: string | null;
   isSignedIn: boolean;
+  session: ReturnType<typeof useSession>["session"] | null;
 };
 
 const SupabaseContext = createContext<SupabaseContextValue | undefined>(
@@ -19,10 +20,11 @@ export const SupabaseProvider = ({ children }: { children: ReactNode }) => {
   const supabase = useClerkSupabaseClient();
 
   const value: SupabaseContextValue = {
-    supabase: !isLoaded || !isSignedIn || !session ? null : supabase,
+    supabase: supabase,
     userId: session?.user.id ?? null,
     sessionId: session?.id ?? null,
     isSignedIn: !!isSignedIn,
+    session: isLoaded && isSignedIn ? session : null,
   };
 
   return (

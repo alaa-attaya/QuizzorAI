@@ -1,7 +1,6 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { StatusBar } from "expo-status-bar";
 
 type HeaderProps = {
   title: string;
@@ -16,25 +15,28 @@ export function Header({ title, leftButton }: HeaderProps) {
 
   return (
     <View className="bg-blue-600" style={{ paddingTop: top }}>
-      {/* StatusBar matches header background */}
-      <StatusBar style="light" backgroundColor="#2563EB" />
-
-      <View className="h-20 justify-center items-center relative px-4 lg:px-6">
-        {leftButton && (
-          <TouchableOpacity
-            onPress={leftButton.onPress}
-            className="p-2 absolute left-0 top-1/2 -translate-y-1/2"
-          >
+      <View className="flex-row items-center justify-between px-4 py-4">
+        {/* Left button */}
+        {leftButton ? (
+          <TouchableOpacity onPress={leftButton.onPress} className="p-2">
             <Feather
               name={leftButton.icon || "chevron-left"}
               size={28}
               color="white"
             />
           </TouchableOpacity>
+        ) : (
+          // Empty space to reserve layout space
+          <View style={{ width: 44 }} />
         )}
-        <Text className="text-white text-3xl font-bold text-center">
+
+        {/* Title */}
+        <Text className="text-white text-2xl font-bold text-center flex-1">
           {title}
         </Text>
+
+        {/* Right spacer to center title */}
+        <View style={{ width: 44 }} />
       </View>
     </View>
   );

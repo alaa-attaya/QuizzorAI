@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// src/components/Dashboard.tsx
+import React, { useEffect, useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -8,29 +9,103 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import { useSupabase } from "@/providers/SupabaseProvider";
+import { useDashboardStore } from "@/stores/dashboardStore";
+import { useSubjectsStore } from "@/stores/subjectsStore";
 
-import { useDashboardCache } from "@/lib/hooks/useDashboardCache";
-import Toast from "react-native-toast-message";
+type UserQuiz = {
+  id: string;
+  quizzes: { id: string; title: string } | null;
+  score: number | null;
+  completed_at: string | null;
+};
 
-export function Dashboard() {
+export default function Dashboard() {
   const router = useRouter();
-  const { stats, recent } = useDashboardCache(
-    "dashboard_stats",
-    "dashboard_recent"
-  );
+  const { supabase, session } = useSupabase();
+
+  const subjects = useSubjectsStore((s) => s.subjects);
+  const setSubjects = useSubjectsStore((s) => s.setSubjects);
+  const stats = useDashboardStore((s) => s.stats);
+  const setStats = useDashboardStore((s) => s.setStats);
+
+  const [recent, setRecent] = useState<UserQuiz[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Pull-to-refresh
+  // --- Fetch subjects from Supabase ---
+  const fetchSubjects = useCallback(async () => {
+    if (!supabase || !session) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("subjects")
+        .select("*")
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      setSubjects(data || []); // overwrite Zustand
+    } catch (err) {
+      console.error("Failed to fetch subjects:", err);
+    }
+  }, [supabase, session, setSubjects]);
+
+  // --- Fetch recent quizzes ---
+  const fetchRecent = useCallback(async () => {
+    if (!supabase || !session) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("user_quizzes")
+        .select("id, score, completed_at, quizzes(id, title, is_deleted)")
+        .order("completed_at", { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+
+      const filtered = (data || []).filter(
+        (uq: any) => uq.quizzes && !uq.quizzes.is_deleted
+      );
+
+      setRecent(
+        filtered.map((uq: any) => ({
+          id: uq.id,
+          quizzes: uq.quizzes,
+          score: uq.score ?? null,
+          completed_at: uq.completed_at ?? null,
+        }))
+      );
+
+      const scores = filtered
+        .map((uq: any) => uq.score ?? null)
+        .filter(Boolean);
+      const avgScore = scores.length
+        ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+        : "N/A";
+
+      setStats((prev) => ({ ...prev, averageScore: avgScore }));
+    } catch (err) {
+      console.error("Failed to fetch recent quizzes:", err);
+      setRecent([]);
+      setStats((prev) => ({ ...prev, averageScore: "N/A" }));
+    }
+  }, [supabase, session, setStats]);
+
+  // --- Stats auto-update on Zustand changes ---
+  useEffect(() => {
+    setStats((prev) => ({ ...prev, subjects: subjects.length }));
+  }, [subjects, setStats]);
+
   const onRefresh = async () => {
     setRefreshing(true);
-    Toast.show({
-      type: "success",
-      text1: "Dashboard updated",
-      position: "top",
-      visibilityTime: 1000,
-    });
+    await Promise.all([fetchSubjects(), fetchRecent()]);
     setRefreshing(false);
   };
+
+  useEffect(() => {
+    onRefresh(); // fetch fresh on mount
+  }, []);
 
   return (
     <ScrollView
@@ -50,7 +125,7 @@ export function Dashboard() {
         <Text className="text-xl font-bold mb-4">Your Stats</Text>
         <View className="flex-row justify-between">
           {[
-            { icon: "book", label: "Subjects", value: stats.subjects },
+            { icon: "book", label: "Subjects", value: subjects.length },
             { icon: "layers", label: "Topics", value: stats.topics },
             { icon: "file-text", label: "Quizzes", value: stats.quizzes },
             { icon: "award", label: "Avg Score", value: stats.averageScore },
@@ -117,7 +192,9 @@ export function Dashboard() {
               className="bg-white rounded-xl p-4 shadow mb-3 flex-row justify-between items-center"
             >
               <View>
-                <Text className="font-semibold">{uq.quizzes?.title}</Text>
+                <Text className="font-semibold">
+                  {uq.quizzes?.title ?? "Untitled Quiz"}
+                </Text>
                 <Text className="text-gray-500 text-sm">
                   Score: {uq.score ?? "N/A"}
                 </Text>
@@ -136,5 +213,3 @@ export function Dashboard() {
     </ScrollView>
   );
 }
-
-export default Dashboard;

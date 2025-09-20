@@ -3,113 +3,175 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
+  TextInput,
+  ActivityIndicator,
   RefreshControl,
+  FlatList,
+  Keyboard,
 } from "react-native";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import Toast from "react-native-toast-message";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Header } from "@/components/Header";
-
-type Subject = {
-  id: string;
-  name: string;
-  description?: string;
-};
+import { useSupabase } from "@/providers/SupabaseProvider";
+import { useSubjectsStore, Subject } from "@/stores/subjectsStore";
 
 export default function SubjectsListPage() {
   const router = useRouter();
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const { supabase, session } = useSupabase();
+  const subjects = useSubjectsStore((s) => s.subjects);
+  const setSubjects = useSubjectsStore((s) => s.setSubjects);
 
-  const loadCache = async () => {
+  const [filteredSubjects, setFilteredSubjects] = useState<Subject[]>([]);
+  const [searchText, setSearchText] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const fetchSubjects = useCallback(async () => {
+    if (!supabase || !session) return;
+
     try {
-      const cached = await AsyncStorage.getItem("subjects_list");
-      if (cached) setSubjects(JSON.parse(cached));
+      setRefreshing(true);
+      const { data, error } = await supabase
+        .from("subjects")
+        .select("id, name, description, is_deleted, created_by")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Only show active subjects
+      const activeSubjects = (data || []).filter((s) => !s.is_deleted);
+      setSubjects(activeSubjects);
     } catch (err) {
-      console.error("Failed to load subjects cache:", err);
+      console.error(err);
+      setSubjects([]);
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
     }
-  };
+  }, [supabase, session, setSubjects]);
 
   useEffect(() => {
-    loadCache();
-  }, []);
+    fetchSubjects();
+  }, [fetchSubjects]);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadCache();
-    }, [])
-  );
+  useEffect(() => {
+    setFilteredSubjects(
+      searchText
+        ? subjects.filter((s) =>
+            s.name.toLowerCase().startsWith(searchText.toLowerCase())
+          )
+        : subjects
+    );
+  }, [subjects, searchText]);
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadCache();
-    setRefreshing(false);
-    Toast.show({
-      type: "success",
-      text1: "Subjects updated",
-      position: "top",
-      visibilityTime: 1000,
-    });
+  const clearSearch = () => setSearchText("");
+
+  const handleEdit = (item: Subject) => {
+    if (item.created_by !== session?.user.id) return;
+    router.push(`/subjects/edit-subject?id=${item.id}`);
   };
 
-  return (
-    <SafeAreaView
-      className="flex-1 bg-gray-100"
-      edges={["bottom", "left", "right"]} // ignore top because Header handles status bar
+  const renderSubject = ({ item }: { item: Subject }) => (
+    <TouchableOpacity
+      onPress={() => router.push(`/subjects/${item.id}`)}
+      className="bg-white rounded-xl mb-3 p-3 flex-row items-center justify-between shadow-sm"
+      activeOpacity={0.9}
     >
-      <ScrollView
-        className="flex-1 bg-gray-100"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#2563EB"
-            colors={["#2563EB"]}
-            progressBackgroundColor="#F3F4F6"
+      <View className="flex-1 pr-3">
+        <Text className="font-semibold text-base text-gray-900">
+          {item.name}
+        </Text>
+        <Text className="text-gray-500 text-sm mt-1">
+          {item.description || "No description"}
+        </Text>
+      </View>
+      {item.created_by === session?.user.id && (
+        <TouchableOpacity
+          onPress={() => handleEdit(item)}
+          className="bg-gray-50 rounded-full p-3 shadow"
+          activeOpacity={0.8}
+        >
+          <Feather name="edit" size={16} color="#2563EB" />
+        </TouchableOpacity>
+      )}
+    </TouchableOpacity>
+  );
+
+  const subjectsToShow = searchText.length > 0 ? filteredSubjects : subjects;
+
+  return (
+    <SafeAreaView edges={["left", "right"]} className="flex-1 bg-gray-100">
+      <Header title="Subjects" />
+
+      <View className="px-4 pt-4 pb-2 flex-row items-center">
+        <View className="flex-1 flex-row items-center bg-white rounded-xl border border-gray-300 h-12 px-3">
+          <Feather name="search" size={18} color="#9CA3AF" />
+          <TextInput
+            value={searchText}
+            onChangeText={setSearchText}
+            placeholder="Search subjects..."
+            placeholderTextColor="#9CA3AF"
+            className="flex-1 ml-2 text-gray-900 text-base"
+            returnKeyType="search"
+            onSubmitEditing={Keyboard.dismiss}
+            style={{ height: "100%" }}
           />
-        }
-      >
-        {/* Header with status bar handled */}
-        <Header title="Subjects" />
-
-        <View className="p-4">
-          {/* Add Subject Button */}
-          <TouchableOpacity
-            onPress={() => router.push("/subjects/create-subject")}
-            className="bg-blue-600 rounded-xl px-4 py-3 flex-row items-center justify-center mb-4"
-          >
-            <Feather name="plus" size={20} color="#fff" />
-            <Text className="text-white font-semibold ml-2">Add Subject</Text>
-          </TouchableOpacity>
-
-          <Text className="text-3xl font-bold mb-4">Your Subjects</Text>
-
-          {subjects.length ? (
-            subjects.map((subject) => (
-              <TouchableOpacity
-                key={subject.id}
-                onPress={() => router.push(`/subjects/${subject.id}`)}
-                className="bg-white rounded-xl p-4 shadow mb-3 flex-row justify-between items-center"
-              >
-                <View>
-                  <Text className="font-semibold text-lg">{subject.name}</Text>
-                  {subject.description && (
-                    <Text className="text-gray-500 text-sm mt-1">
-                      {subject.description}
-                    </Text>
-                  )}
-                </View>
-                <Feather name="chevron-right" size={20} color="#9CA3AF" />
-              </TouchableOpacity>
-            ))
-          ) : (
-            <Text className="text-gray-500">No subjects found.</Text>
+          {searchText.length > 0 && (
+            <TouchableOpacity
+              onPress={clearSearch}
+              className="ml-2"
+              activeOpacity={0.7}
+            >
+              <Feather name="x" size={18} color="#6B7280" />
+            </TouchableOpacity>
           )}
         </View>
-      </ScrollView>
+
+        <TouchableOpacity
+          onPress={() => router.push("/subjects/create-subject")}
+          className="bg-blue-600 rounded-xl flex-row items-center justify-center ml-3 h-12 px-4"
+          activeOpacity={0.85}
+        >
+          <Feather name="plus" size={16} color="#fff" />
+          <Text className="text-white font-semibold ml-2">Add</Text>
+        </TouchableOpacity>
+      </View>
+
+      {loading ? (
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#2563EB" />
+        </View>
+      ) : subjectsToShow.length === 0 ? (
+        <View className="flex-1 justify-center items-center px-6">
+          <Text className="text-gray-500 text-center">
+            {searchText
+              ? "No subjects match your search."
+              : "No subjects created yet."}
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={subjectsToShow}
+          keyExtractor={(item) => item.id}
+          renderItem={renderSubject}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 8,
+            paddingBottom: 16,
+            flexGrow: 1,
+          }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={fetchSubjects}
+              tintColor="#2563EB"
+              colors={["#2563EB"]}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </SafeAreaView>
   );
 }

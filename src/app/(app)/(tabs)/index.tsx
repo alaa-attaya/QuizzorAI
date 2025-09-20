@@ -1,6 +1,6 @@
 import React from "react";
 import { Header } from "@/components/Header";
-import { Dashboard } from "@/components/Dashboard";
+import Dashboard from "@/components/Dashboard";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Page() {
