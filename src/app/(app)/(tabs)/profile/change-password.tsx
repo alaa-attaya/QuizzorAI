@@ -135,7 +135,7 @@ export default function ChangePasswordPage() {
         extraScrollHeight={20}
         keyboardShouldPersistTaps="handled"
       >
-        <View className="bg-white rounded-2xl px-6 py-8 shadow-md m-4">
+        <View className="bg-white rounded-2xl px-6 py-8 shadow-md m-4 flex-1">
           <Text className="text-2xl font-bold text-gray-800 mb-6 text-center">
             {isOAuthOnly
               ? "Create a Password for Your Account"
