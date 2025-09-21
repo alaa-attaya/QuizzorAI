@@ -16,26 +16,25 @@ export function Header({ title, leftButton }: HeaderProps) {
   return (
     <View className="bg-blue-600" style={{ paddingTop: top }}>
       <View className="flex-row items-center justify-between px-4 py-4">
-        {/* Left button */}
-        {leftButton ? (
-          <TouchableOpacity onPress={leftButton.onPress} className="p-2">
-            <Feather
-              name={leftButton.icon || "chevron-left"}
-              size={28}
-              color="white"
-            />
-          </TouchableOpacity>
-        ) : (
-          // Empty space to reserve layout space
-          <View style={{ width: 44 }} />
-        )}
+        {/* Left button or placeholder */}
+        <View style={{ width: 44, alignItems: "flex-start" }}>
+          {leftButton && (
+            <TouchableOpacity onPress={leftButton.onPress} activeOpacity={0.7}>
+              <Feather
+                name={leftButton.icon || "arrow-left"}
+                size={24}
+                color="white"
+              />
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* Title */}
-        <Text className="text-white text-2xl font-bold text-center flex-1">
-          {title}
-        </Text>
+        <View style={{ flex: 1, alignItems: "center" }}>
+          <Text className="text-white text-2xl font-bold">{title}</Text>
+        </View>
 
-        {/* Right spacer to center title */}
+        {/* Right placeholder for symmetry */}
         <View style={{ width: 44 }} />
       </View>
     </View>
