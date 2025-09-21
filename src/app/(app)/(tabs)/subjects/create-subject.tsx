@@ -80,7 +80,7 @@ export default function CreateSubjectPage() {
             title="Create Subject"
             leftButton={{ onPress: () => router.back() }}
           />
-          <View className="bg-white m-4 rounded-2xl p-6 shadow">
+          <View className="bg-white m-4 rounded-2xl p-6 shadow flex-1">
             <Text className="text-2xl font-bold text-gray-800 mb-6 text-center">
               New Subject
             </Text>
