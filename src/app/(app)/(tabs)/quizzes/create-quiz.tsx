@@ -19,6 +19,15 @@ import { Header } from "@/components/Header";
 import { useSupabase } from "@/providers/SupabaseProvider";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+type Quiz = {
+  id: string;
+  title: string;
+  description?: string | null;
+  is_public: boolean;
+  is_deleted?: boolean;
+  created_by: string;
+};
+
 export default function CreateQuizPage() {
   const router = useRouter();
   const { supabase, session } = useSupabase();
@@ -28,8 +37,9 @@ export default function CreateQuizPage() {
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(true);
 
-  const { mutate, status } = useMutation({
-    mutationFn: async () => {
+  const mutation = useMutation({
+    mutationKey: ["create-quiz"],
+    mutationFn: async (): Promise<Quiz> => {
       if (!supabase || !session) throw new Error("Supabase not ready");
       if (!title.trim()) throw new Error("Title is required");
 
@@ -48,8 +58,19 @@ export default function CreateQuizPage() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["quizzes"] });
+    onSuccess: (newQuiz) => {
+      // Update quizzes list cache immediately
+      queryClient.setQueryData<Quiz[]>(
+        ["quizzes", session?.user?.id],
+        (old) => [...(old || []), newQuiz]
+      );
+
+      // Invalidate dashboard stats so it refetches
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard-quizzes", session?.user?.id],
+      });
+
+      // Navigate back to quizzes list
       router.replace("/quizzes");
     },
     onError: (err: any) => {
@@ -57,7 +78,7 @@ export default function CreateQuizPage() {
     },
   });
 
-  const isPending = status === "pending";
+  const isPending = mutation.status === "pending";
 
   return (
     <KeyboardAvoidingView
@@ -118,7 +139,7 @@ export default function CreateQuizPage() {
 
             {/* Submit Button */}
             <TouchableOpacity
-              onPress={() => mutate()}
+              onPress={() => mutation.mutate()}
               disabled={isPending}
               className={`py-4 rounded-xl flex-row items-center justify-center ${
                 isPending ? "bg-blue-400 opacity-70" : "bg-blue-600"

@@ -12,45 +12,21 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useQuizzes, type Quiz } from "@/hooks/useQuizzes";
 import { useSupabase } from "@/providers/SupabaseProvider";
 import { Header } from "@/components/Header";
 
-type Quiz = {
-  id: string;
-  title: string;
-  description?: string | null;
-  is_public: boolean;
-  is_deleted?: boolean;
-  created_by: string;
-};
-
 export default function QuizzesListPage() {
   const router = useRouter();
-  const { supabase, session } = useSupabase();
+  const { session } = useSupabase();
+  const queryClient = useQueryClient();
+
+  const { data: quizzes = [], loading, refetch } = useQuizzes();
 
   const [searchText, setSearchText] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
-
-  const {
-    data: quizzes = [],
-    isLoading,
-    refetch,
-  } = useQuery<Quiz[]>({
-    queryKey: ["quizzes", session?.user.id],
-    queryFn: async () => {
-      if (!supabase || !session) return [];
-      const { data, error } = await supabase
-        .from("quizzes")
-        .select("*")
-        .eq("is_deleted", false)
-        .order("title", { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!supabase && !!session,
-  });
 
   const quizzesToShow = useMemo(() => {
     if (!searchText) return quizzes;
@@ -66,7 +42,7 @@ export default function QuizzesListPage() {
       if (isNavigating) return;
       setIsNavigating(true);
       try {
-        await router.push(path);
+        router.push(path);
       } finally {
         setIsNavigating(false);
       }
@@ -76,15 +52,24 @@ export default function QuizzesListPage() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await refetch();
-    setRefreshing(false);
+    try {
+      await refetch();
+
+      // Invalidate dashboard stats query so it updates together
+      queryClient.invalidateQueries({
+        queryKey: ["dashboard-quizzes", session?.user?.id],
+      });
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleEdit = (quiz: Quiz) => {
-    if (quiz.created_by === session?.user.id) {
+    if (quiz.created_by === session?.user?.id) {
       navigateTo(`/quizzes/edit-quiz?id=${quiz.id}`);
     }
   };
+
   const renderQuiz = ({ item }: { item: Quiz }) => (
     <TouchableOpacity
       onPress={() => navigateTo(`/quizzes/${item.id}`)}
@@ -92,17 +77,12 @@ export default function QuizzesListPage() {
       activeOpacity={0.9}
     >
       <View className="flex-1 pr-3">
-        {/* Title */}
         <Text className="font-semibold text-base text-gray-900 mb-1">
           {item.title}
         </Text>
-
-        {/* Description */}
         <Text className="text-gray-500 text-sm mb-1">
           {item.description || "No description"}
         </Text>
-
-        {/* Public / Private below description */}
         <View className="flex-row items-center">
           <View
             className={`w-3 h-3 rounded-full mr-1 ${
@@ -119,8 +99,7 @@ export default function QuizzesListPage() {
         </View>
       </View>
 
-      {/* Edit button stays on the right */}
-      {item.created_by === session?.user.id && (
+      {item.created_by === session?.user?.id && (
         <TouchableOpacity
           onPress={() => handleEdit(item)}
           disabled={isNavigating}
@@ -135,14 +114,15 @@ export default function QuizzesListPage() {
 
   return (
     <SafeAreaView edges={["left", "right"]} className="flex-1 bg-gray-100">
+      {/* Header */}
       <Header title="Quizzes" />
 
-      {isLoading ? (
-        <View className="flex-1 justify-center items-center">
+      {loading && !refreshing ? (
+        <View className="flex-1 justify-center items-center mt-8">
           <ActivityIndicator size="large" color="#2563EB" />
         </View>
       ) : (
-        <>
+        <View className="flex-1">
           {/* Search + Add */}
           <View className="px-4 pt-4 pb-2 flex-row items-center">
             <View className="flex-1 flex-row items-center bg-white rounded-xl border border-gray-300 h-12 px-3">
@@ -209,7 +189,7 @@ export default function QuizzesListPage() {
             }
             showsVerticalScrollIndicator={false}
           />
-        </>
+        </View>
       )}
     </SafeAreaView>
   );

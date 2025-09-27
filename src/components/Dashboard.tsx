@@ -1,5 +1,5 @@
 // src/pages/dashboard.tsx
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,30 +10,37 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import { useQuizzes } from "@/hooks/useQuizzes";
+import { useDashboardQuizzes } from "@/hooks/useDashboard";
+import { useSupabase } from "@/providers/SupabaseProvider";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Dashboard() {
   const router = useRouter();
-  const { totalQuizzes, recent, averageScore, fetchQuizzesData, loading } =
-    useQuizzes();
+  const { supabase, session } = useSupabase();
+  const queryClient = useQueryClient();
 
+  const { data, isLoading, refetch } = useDashboardQuizzes();
   const [refreshing, setRefreshing] = useState(false);
-  const [firstLoad, setFirstLoad] = useState(true); // track first load
 
   const onRefresh = async () => {
+    if (!session?.user?.id) return;
+
     setRefreshing(true);
-    await fetchQuizzesData();
-    setRefreshing(false);
+    try {
+      // Refetch dashboard data
+      await refetch();
+
+      // Invalidate user-specific quizzes list
+      queryClient.invalidateQueries({
+        queryKey: ["quizzes", session.user.id],
+      });
+    } finally {
+      setRefreshing(false);
+    }
   };
 
-  useEffect(() => {
-    (async () => {
-      await fetchQuizzesData();
-      setFirstLoad(false);
-    })();
-  }, []);
-
-  if (loading && firstLoad) {
+  // Full-screen loader on initial load
+  if (isLoading && !refreshing) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-100">
         <ActivityIndicator size="large" color="#2563EB" />
@@ -41,19 +48,10 @@ export default function Dashboard() {
     );
   }
 
-  // --- Calculate Completion Rate ---
-  const totalQuestionsAttempted = recent.reduce(
-    (acc, uq) => acc + (uq.questions_answered ?? 0),
-    0
-  );
-  const totalQuestionsPossible = recent.reduce(
-    (acc, uq) => acc + (uq.total_questions ?? 0),
-    0
-  );
-  const completionRate =
-    totalQuestionsPossible > 0
-      ? Math.round((totalQuestionsAttempted / totalQuestionsPossible) * 100)
-      : 0;
+  const totalQuizzes = data?.totalQuizzes ?? 0;
+  const recent = data?.recent ?? [];
+  const averageScore = data?.averageScore ?? "N/A";
+  const completionRate = data?.completionRate ?? "N/A";
 
   const stats = [
     { icon: "file-text", label: "Quizzes", value: totalQuizzes },
