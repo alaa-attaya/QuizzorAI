@@ -187,7 +187,7 @@ export default function Dashboard() {
     >
       {/* Stats */}
       <View className="mx-4 mt-6 mb-2">
-        <Text className="text-lg font-bold">Your Stats</Text>
+        <Text className="text-lg font-bold">Insights</Text>
       </View>
       <View className="mx-4 bg-white rounded-2xl shadow p-4">
         <View className="flex-row justify-around">

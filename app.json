@@ -4,7 +4,7 @@
   "orientation": "default",
   "web": {
     "output": "static",
-    "favicon": "./assets/images/favicon.ico"
+    "favicon": "./assets/images/quizzorai.png"
   },
   "plugins": [
     [
