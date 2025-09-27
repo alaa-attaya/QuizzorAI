@@ -29,9 +29,9 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="subjects"
+          name="quizzes"
           options={{
-            title: "Subjects",
+            title: "Quizzes",
             tabBarIcon: ({ color, size }) => (
               <Feather name="book" color={color} size={size} />
             ),

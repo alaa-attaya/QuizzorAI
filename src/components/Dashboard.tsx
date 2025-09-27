@@ -1,4 +1,5 @@
-import React, { useEffect, useCallback, useState } from "react";
+// src/pages/dashboard.tsx
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,160 +10,30 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import { useSupabase } from "@/providers/SupabaseProvider";
-import { useSubjectsStore } from "@/stores/subjectsStore";
-import { useTopicsStore, Topic } from "@/stores/topicsStore";
-
-type UserQuiz = {
-  id: string;
-  quizzes: { id: string; title: string } | null;
-  score: number | null;
-  completed_at: string | null;
-};
+import { useQuizzes } from "@/hooks/useQuizzes";
 
 export default function Dashboard() {
   const router = useRouter();
-  const { supabase, session } = useSupabase();
+  const { totalQuizzes, recent, averageScore, fetchQuizzesData, loading } =
+    useQuizzes();
 
-  const subjects = useSubjectsStore((s) => s.subjects);
-  const setSubjects = useSubjectsStore((s) => s.setSubjects);
-
-  const totalTopics = useTopicsStore((t) => t.totalTopics);
-  const setTopics = useTopicsStore((t) => t.setTopics);
-  const clearTopics = useTopicsStore((t) => t.clearTopics);
-
-  const [totalQuizzes, setTotalQuizzes] = useState(0);
-  const [averageScore, setAverageScore] = useState<number | string>("N/A");
-
-  const [recent, setRecent] = useState<UserQuiz[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  // --- Fetch subjects ---
-  const fetchSubjects = useCallback(async () => {
-    if (!supabase || !session) return;
-    try {
-      const { data, error } = await supabase
-        .from("subjects")
-        .select("*")
-        .eq("is_deleted", false)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setSubjects(data || []);
-    } catch (err) {
-      console.error("Failed to fetch subjects:", err);
-      setSubjects([]);
-    }
-  }, [supabase, session, setSubjects]);
-
-  // --- Fetch topics ---
-  const fetchTopics = useCallback(async () => {
-    if (!supabase || !session) return;
-    try {
-      const { data, error } = await supabase
-        .from("topics")
-        .select("*")
-        .eq("is_deleted", false)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      if (data) {
-        // build a single map: { subjectId: Topic[] }
-        const topicsBySubj: Record<string, Topic[]> = {};
-        (data as Topic[]).forEach((t) => {
-          if (!topicsBySubj[t.subject_id]) topicsBySubj[t.subject_id] = [];
-          topicsBySubj[t.subject_id].push(t);
-        });
-
-        // atomic update: set the entire map at once
-        // uses the new store action setAllTopics
-        const setAllTopics = useTopicsStore.getState().setAllTopics;
-        setAllTopics(topicsBySubj);
-      }
-    } catch (err) {
-      console.error("Failed to fetch topics:", err);
-    }
-  }, [supabase, session]);
-
-  // --- Fetch quizzes count ---
-  const fetchQuizzesCount = useCallback(async () => {
-    if (!supabase || !session) return;
-    try {
-      const { count, error } = await supabase
-        .from("quizzes")
-        .select("*", { count: "exact", head: true })
-        .eq("is_deleted", false);
-
-      if (error) throw error;
-      setTotalQuizzes(count || 0);
-    } catch (err) {
-      console.error("Failed to fetch quizzes count:", err);
-      setTotalQuizzes(0);
-    }
-  }, [supabase, session]);
-
-  // --- Fetch recent quizzes ---
-  const fetchRecent = useCallback(async () => {
-    if (!supabase || !session) return;
-    try {
-      const { data, error } = await supabase
-        .from("user_quizzes")
-        .select(`id, score, completed_at, quizzes!inner(id, title, is_deleted)`)
-        .order("completed_at", { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-
-      const filtered = (data || []).filter(
-        (uq: any) => uq.quizzes && !uq.quizzes.is_deleted
-      );
-
-      setRecent(
-        filtered.map((uq: any) => ({
-          id: uq.id,
-          quizzes: uq.quizzes,
-          score: uq.score ?? null,
-          completed_at: uq.completed_at ?? null,
-        }))
-      );
-
-      const scores = filtered
-        .map((uq: any) => uq.score ?? null)
-        .filter((s: number | null): s is number => s !== null);
-
-      setAverageScore(
-        scores.length
-          ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-          : "N/A"
-      );
-    } catch (err) {
-      console.error("Failed to fetch recent quizzes:", err);
-      setRecent([]);
-      setAverageScore("N/A");
-    }
-  }, [supabase, session]);
+  const [firstLoad, setFirstLoad] = useState(true); // track first load
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([
-      fetchSubjects(),
-      fetchTopics(),
-      fetchQuizzesCount(),
-      fetchRecent(),
-    ]);
+    await fetchQuizzesData();
     setRefreshing(false);
   };
 
   useEffect(() => {
     (async () => {
-      await onRefresh();
-      setLoading(false);
+      await fetchQuizzesData();
+      setFirstLoad(false);
     })();
   }, []);
 
-  if (loading) {
+  if (loading && firstLoad) {
     return (
       <View className="flex-1 justify-center items-center bg-gray-100">
         <ActivityIndicator size="large" color="#2563EB" />
@@ -170,7 +41,53 @@ export default function Dashboard() {
     );
   }
 
-  const subjectCount = subjects.length;
+  // --- Calculate Completion Rate ---
+  const totalQuestionsAttempted = recent.reduce(
+    (acc, uq) => acc + (uq.questions_answered ?? 0),
+    0
+  );
+  const totalQuestionsPossible = recent.reduce(
+    (acc, uq) => acc + (uq.total_questions ?? 0),
+    0
+  );
+  const completionRate =
+    totalQuestionsPossible > 0
+      ? Math.round((totalQuestionsAttempted / totalQuestionsPossible) * 100)
+      : 0;
+
+  const stats = [
+    { icon: "file-text", label: "Quizzes", value: totalQuizzes },
+    { icon: "check-circle", label: "Attempts", value: recent.length },
+    { icon: "award", label: "Avg Score", value: averageScore },
+    { icon: "check-square", label: "Completion", value: `${completionRate}%` },
+  ];
+
+  const quickActions = [
+    {
+      icon: "edit-3",
+      label: "Generate Quiz",
+      description: "AI generates quizzes for you automatically.",
+      action: () => router.push("/quizzes/generate-quiz"),
+    },
+    {
+      icon: "users",
+      label: "Public Quizzes",
+      description: "Browse quizzes shared by the community.",
+      action: () => router.push("/quizzes/public"),
+    },
+    {
+      icon: "bar-chart-2",
+      label: "Statistics",
+      description: "View detailed analytics.",
+      action: () => router.push("/statistics"),
+    },
+    {
+      icon: "plus-circle",
+      label: "New Quiz",
+      description: "Create a new quiz from scratch.",
+      action: () => router.push("/quizzes/create-quiz"),
+    },
+  ];
 
   return (
     <ScrollView
@@ -191,12 +108,7 @@ export default function Dashboard() {
       </View>
       <View className="mx-4 bg-white rounded-2xl shadow p-4">
         <View className="flex-row justify-around">
-          {[
-            { icon: "book", label: "Subjects", value: subjectCount },
-            { icon: "layers", label: "Topics", value: totalTopics },
-            { icon: "file-text", label: "Quizzes", value: totalQuizzes },
-            { icon: "award", label: "Avg Score", value: averageScore },
-          ].map((item) => (
+          {stats.map((item) => (
             <View key={item.label} className="items-center mx-1">
               <Feather name={item.icon as any} size={24} color="#2563EB" />
               <Text className="text-gray-700 mt-1 text-lg font-bold">
@@ -213,32 +125,7 @@ export default function Dashboard() {
         <Text className="text-lg font-bold">Quick Actions</Text>
       </View>
       <View className="mx-4 flex-row flex-wrap justify-between">
-        {[
-          {
-            icon: "edit-3",
-            label: "Generate Quiz",
-            description: "AI generates quizzes for your topics automatically.",
-            action: () => router.push("/quizzes/generate-quiz"),
-          },
-          {
-            icon: "users",
-            label: "Public Quizzes",
-            description: "Browse quizzes shared by the community.",
-            action: () => router.push("/quizzes/public"),
-          },
-          {
-            icon: "bar-chart-2",
-            label: "Statistics",
-            description: "View detailed statistics and analytics.",
-            action: () => router.push("/statistics"),
-          },
-          {
-            icon: "plus-circle",
-            label: "New Subject",
-            description: "Create a new subject to start adding quizzes.",
-            action: () => router.push("/subjects/create-subject"),
-          },
-        ].map((item) => (
+        {quickActions.map((item) => (
           <TouchableOpacity
             key={item.label}
             onPress={item.action}
