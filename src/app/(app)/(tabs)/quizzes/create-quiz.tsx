@@ -195,8 +195,8 @@ export default function CreateQuizPage() {
               <Switch
                 value={isPublic}
                 onValueChange={setIsPublic}
-                thumbColor={isPublic ? "#2563EB" : "#f4f3f4"}
-                trackColor={{ false: "#d1d5db", true: "#93c5fd" }}
+                thumbColor={isPublic ? "#22c55e" : "#f4f3f4"}
+                trackColor={{ false: "#d1d5db", true: "#86efac" }}
                 disabled={isPending}
               />
             </View>
