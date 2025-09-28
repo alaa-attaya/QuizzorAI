@@ -1,3 +1,4 @@
+// src/pages/quizzes/create-quiz.tsx
 import React, { useState } from "react";
 import {
   Text,
@@ -24,7 +25,7 @@ type Quiz = {
   title: string;
   description?: string | null;
   is_public: boolean;
-  is_deleted?: boolean;
+  tags: string[];
   created_by: string;
 };
 
@@ -36,6 +37,22 @@ export default function CreateQuizPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(true);
+
+  // tags state
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+
+  const addTag = () => {
+    const clean = tagInput.trim();
+    if (clean && !tags.includes(clean)) {
+      setTags((prev) => [...prev, clean]);
+    }
+    setTagInput("");
+  };
+
+  const removeTag = (tag: string) => {
+    setTags((prev) => prev.filter((t) => t !== tag));
+  };
 
   const mutation = useMutation({
     mutationKey: ["create-quiz"],
@@ -50,6 +67,7 @@ export default function CreateQuizPage() {
             title: title.trim(),
             description: description.trim() || null,
             is_public: isPublic,
+            tags: tags.length > 0 ? tags : [],
           },
         ])
         .select()
@@ -58,23 +76,20 @@ export default function CreateQuizPage() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (newQuiz) => {
-      // Update quizzes list cache immediately
-      queryClient.setQueryData<Quiz[]>(
-        ["quizzes", session?.user?.id],
-        (old) => [...(old || []), newQuiz]
-      );
-
-      // Invalidate dashboard stats so it refetches
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["quizzes", session?.user?.id],
+      });
       queryClient.invalidateQueries({
         queryKey: ["dashboard-quizzes", session?.user?.id],
       });
 
-      // Navigate back to quizzes list
-      router.replace("/quizzes");
+      router.back(); // ✅ go back to /quizzes without stacking
     },
     onError: (err: any) => {
-      Alert.alert("Error", err.message || "Failed to create quiz.");
+      Alert.alert("Error", err.message || "Failed to create quiz.", [
+        { text: "OK", onPress: () => router.dismissAll() }, // ✅ reset stack if needed
+      ]);
     },
   });
 
@@ -92,8 +107,9 @@ export default function CreateQuizPage() {
         >
           <Header
             title="Create Quiz"
-            leftButton={{ onPress: () => router.replace("/quizzes") }}
+            leftButton={{ onPress: () => router.dismissAll() }} // ✅ cancel button nukes stack
           />
+
           <View className="bg-white m-4 rounded-2xl p-6 shadow flex-1">
             <Text className="text-2xl font-bold text-gray-800 mb-6 text-center">
               New Quiz
@@ -110,8 +126,7 @@ export default function CreateQuizPage() {
                 className="bg-gray-100 rounded-xl px-4 py-3 border border-gray-300"
               />
             </View>
-
-            {/* Description */}
+            {/* Description Multiline */}
             <View className="mb-4">
               <Text className="text-gray-700 mb-2 font-medium">
                 Description
@@ -120,9 +135,58 @@ export default function CreateQuizPage() {
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Optional"
+                multiline
+                scrollEnabled
+                textAlignVertical="top"
                 editable={!isPending}
+                maxLength={100} // optional character limit
                 className="bg-gray-100 rounded-xl px-4 py-3 border border-gray-300"
+                style={{ height: 80 }} // roughly 4 lines
               />
+              <Text className="text-gray-400 text-sm mt-1 text-right">
+                {description.length} / 100
+              </Text>
+            </View>
+
+            {/* Tags */}
+            <View className="mb-4">
+              <Text className="text-gray-700 mb-2 font-medium">Tags</Text>
+              <View className="flex-row items-center mb-2">
+                <TextInput
+                  value={tagInput}
+                  onChangeText={setTagInput}
+                  placeholder="Type a tag and press +"
+                  editable={!isPending}
+                  onSubmitEditing={addTag}
+                  className="flex-1 bg-gray-100 rounded-xl px-4 py-3 border border-gray-300"
+                />
+                <TouchableOpacity
+                  onPress={addTag}
+                  disabled={!tagInput.trim()}
+                  className="ml-2 bg-blue-600 px-4 py-3 rounded-xl"
+                >
+                  <Feather name="plus" size={18} color="#fff" />
+                </TouchableOpacity>
+              </View>
+
+              <View className="flex-row flex-wrap">
+                {tags.map((tag) => (
+                  <View
+                    key={tag}
+                    className="flex-row items-center bg-blue-100 px-3 py-2 rounded-full mr-2 mb-2"
+                  >
+                    <Text className="text-blue-700 font-medium mr-2">
+                      {tag}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => removeTag(tag)}
+                      className="p-1 rounded-full"
+                    >
+                      <Feather name="x" size={18} color="#2563EB" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
             </View>
 
             {/* Public Toggle */}
@@ -137,7 +201,7 @@ export default function CreateQuizPage() {
               />
             </View>
 
-            {/* Submit Button */}
+            {/* Submit */}
             <TouchableOpacity
               onPress={() => mutation.mutate()}
               disabled={isPending}

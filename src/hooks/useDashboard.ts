@@ -56,7 +56,8 @@ export function useDashboardQuizzes() {
       };
     },
     enabled: !!supabase && !!session,
-    staleTime: 60_000, // cache 1 min
-    refetchOnWindowFocus: false,
+    staleTime: 0, // always stale
+    refetchOnMount: "always", // fetch fresh on component mount
+    refetchOnWindowFocus: false, // optional: update if user switches tabs
   });
 }

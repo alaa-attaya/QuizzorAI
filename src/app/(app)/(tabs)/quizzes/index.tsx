@@ -13,9 +13,18 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
-import { useQuizzes, type Quiz } from "@/hooks/useQuizzes";
+import { useQuizzes } from "@/hooks/useQuizzes";
 import { useSupabase } from "@/providers/SupabaseProvider";
 import { Header } from "@/components/Header";
+
+export type QuizWithTags = {
+  id: string;
+  title: string;
+  description?: string | null;
+  is_public: boolean;
+  tags?: string[];
+  created_by: string;
+};
 
 export default function QuizzesListPage() {
   const router = useRouter();
@@ -25,15 +34,20 @@ export default function QuizzesListPage() {
   const { data: quizzes = [], loading, refetch } = useQuizzes();
 
   const [searchText, setSearchText] = useState("");
+  const [searchMode, setSearchMode] = useState<"title" | "tags">("title");
   const [refreshing, setRefreshing] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
 
   const quizzesToShow = useMemo(() => {
     if (!searchText) return quizzes;
-    return quizzes.filter((q) =>
-      q.title.toLowerCase().startsWith(searchText.toLowerCase())
-    );
-  }, [quizzes, searchText]);
+    const lowerSearch = searchText.toLowerCase();
+    if (searchMode === "tags") {
+      return quizzes.filter((q) =>
+        q.tags?.some((tag) => tag.toLowerCase().includes(lowerSearch))
+      );
+    }
+    return quizzes.filter((q) => q.title.toLowerCase().includes(lowerSearch));
+  }, [quizzes, searchText, searchMode]);
 
   const clearSearch = () => setSearchText("");
 
@@ -54,8 +68,6 @@ export default function QuizzesListPage() {
     setRefreshing(true);
     try {
       await refetch();
-
-      // Invalidate dashboard stats query so it updates together
       queryClient.invalidateQueries({
         queryKey: ["dashboard-quizzes", session?.user?.id],
       });
@@ -64,13 +76,13 @@ export default function QuizzesListPage() {
     }
   };
 
-  const handleEdit = (quiz: Quiz) => {
+  const handleEdit = (quiz: QuizWithTags) => {
     if (quiz.created_by === session?.user?.id) {
       navigateTo(`/quizzes/edit-quiz?id=${quiz.id}`);
     }
   };
 
-  const renderQuiz = ({ item }: { item: Quiz }) => (
+  const renderQuiz = ({ item }: { item: QuizWithTags }) => (
     <TouchableOpacity
       onPress={() => navigateTo(`/quizzes/${item.id}`)}
       className="bg-white rounded-xl mb-3 p-3 flex-row items-start justify-between shadow-sm border border-gray-100"
@@ -80,18 +92,29 @@ export default function QuizzesListPage() {
         <Text className="font-semibold text-base text-gray-900 mb-1">
           {item.title}
         </Text>
-        <Text className="text-gray-500 text-sm mb-1">
+        <Text className="text-gray-500 text-sm mb-2">
           {item.description || "No description"}
         </Text>
-        <View className="flex-row items-center">
-          <View
-            className={`w-3 h-3 rounded-full mr-1 ${
-              item.is_public ? "bg-green-500" : "bg-gray-400"
-            }`}
-          />
+        {item.tags && item.tags.length > 0 && (
+          <View className="flex-row flex-wrap mb-2">
+            {item.tags.map((tag) => (
+              <View
+                key={tag}
+                className="bg-blue-100 px-2 py-1 rounded-full mr-2 mb-2"
+              >
+                <Text className="text-blue-700 text-xs font-medium">{tag}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+        <View
+          className={`px-2 py-0.5 rounded-full ${
+            item.is_public ? "bg-green-100" : "bg-gray-200"
+          } self-start`}
+        >
           <Text
-            className={`text-xs font-medium ${
-              item.is_public ? "text-green-600" : "text-gray-500"
+            className={`text-xs font-semibold ${
+              item.is_public ? "text-green-700" : "text-gray-600"
             }`}
           >
             {item.is_public ? "Public" : "Private"}
@@ -114,7 +137,6 @@ export default function QuizzesListPage() {
 
   return (
     <SafeAreaView edges={["left", "right"]} className="flex-1 bg-gray-100">
-      {/* Header */}
       <Header title="Quizzes" />
 
       {loading && !refreshing ? (
@@ -126,17 +148,26 @@ export default function QuizzesListPage() {
           {/* Search + Add */}
           <View className="px-4 pt-4 pb-2 flex-row items-center">
             <View className="flex-1 flex-row items-center bg-white rounded-xl border border-gray-300 h-12 px-3">
+              {/* Search Icon */}
               <Feather name="search" size={18} color="#9CA3AF" />
+
+              {/* Text Input */}
               <TextInput
                 value={searchText}
                 onChangeText={setSearchText}
-                placeholder="Search quizzes..."
+                placeholder={
+                  searchMode === "title"
+                    ? "Search by title..."
+                    : "Search by tags..."
+                }
                 placeholderTextColor="#9CA3AF"
                 className="flex-1 ml-2 text-gray-900 text-base"
                 returnKeyType="search"
                 onSubmitEditing={Keyboard.dismiss}
                 style={{ height: "100%" }}
               />
+
+              {/* Clear Text Button */}
               {searchText.length > 0 && (
                 <TouchableOpacity
                   onPress={clearSearch}
@@ -146,6 +177,19 @@ export default function QuizzesListPage() {
                   <Feather name="x" size={18} color="#6B7280" />
                 </TouchableOpacity>
               )}
+
+              {/* Title/Tags Toggle - unified style */}
+              <TouchableOpacity
+                onPress={() =>
+                  setSearchMode(searchMode === "title" ? "tags" : "title")
+                }
+                className="ml-2 px-3 py-1 bg-gray-100 rounded-md border border-gray-300"
+                activeOpacity={0.7}
+              >
+                <Text className="text-gray-700 text-sm font-medium">
+                  {searchMode === "title" ? "Title" : "Tags"}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity

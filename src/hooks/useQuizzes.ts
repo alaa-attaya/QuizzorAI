@@ -9,6 +9,7 @@ export type Quiz = {
   is_public: boolean;
   is_deleted?: boolean;
   created_by: string;
+  tags?: string[]; // <--- optional tags
 };
 
 export function useQuizzes() {
@@ -19,6 +20,7 @@ export function useQuizzes() {
     queryFn: async () => {
       if (!supabase || !session) return [];
 
+      // Fetch quizzes
       const { data, error } = await supabase
         .from("quizzes")
         .select("*")
@@ -27,10 +29,15 @@ export function useQuizzes() {
 
       if (error) throw error;
 
-      return data || [];
+      // Add optional empty tags array to each quiz
+      return (data || []).map((q) => ({
+        ...q,
+        tags: q.tags || [], // keep tags if present, or default to []
+      }));
     },
     enabled: !!supabase && !!session,
-    staleTime: 60_000, // 1 min cache
+    staleTime: 0,
+    refetchOnMount: "always",
     refetchOnWindowFocus: false,
     retry: 1,
   });
