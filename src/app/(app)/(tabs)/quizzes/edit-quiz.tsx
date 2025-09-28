@@ -270,7 +270,7 @@ export default function EditQuizPage() {
               </View>
 
               {/* Public Toggle */}
-              <View className="mb-6 flex-row items-center justify-between">
+              <View className="mb-10 flex-row items-center justify-between">
                 <Text className="text-gray-700 font-medium text-lg">
                   Public
                 </Text>
