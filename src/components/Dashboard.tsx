@@ -65,13 +65,13 @@ export default function Dashboard() {
       icon: "edit-3",
       label: "Generate Quiz",
       description: "AI generates quizzes for you automatically.",
-      action: () => router.push("/quizzes/generate-quiz"),
+      action: () => router.push("/quizzes/generate-quiz", { withAnchor: true }),
     },
     {
       icon: "users",
       label: "Public Quizzes",
       description: "Browse quizzes shared by the community.",
-      action: () => router.push("/quizzes/public"),
+      action: () => router.push("/quizzes/public", { withAnchor: true }),
     },
     {
       icon: "bar-chart-2",
@@ -83,7 +83,7 @@ export default function Dashboard() {
       icon: "plus-circle",
       label: "New Quiz",
       description: "Create a new quiz from scratch.",
-      action: () => router.push("/quizzes/create-quiz"),
+      action: () => router.push("/quizzes/create-quiz", { withAnchor: true }),
     },
   ];
 
